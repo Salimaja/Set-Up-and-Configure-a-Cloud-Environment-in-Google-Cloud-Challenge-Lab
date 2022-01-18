@@ -1,0 +1,118 @@
+Task 1: Create development VPC manually
+
+s-east1 region and us-east1-b zone
+
+
+In the Google Cloud Console, navigate to VPC network > VPC networks
+Click on Create VPC network.
+
+
+
+Task 2: Create production VPC using Deployment Manager
+
+
+gsutil cp -r gs://cloud-training/gsp321/dm ~/
+
+cd dm
+edit prod-network.yaml
+
+Replace SET_REGION with us-east1
+
+gcloud deployment-manager deployments create griffin-prod --config prod-network.yaml
+
+
+
+
+Task 3: Create bastion host
+
+
+In the Cloud Console, navigate to Compute Engine > VM instances.
+Click Create.
+
+griffin-dev-db
+
+Network tag bastion
+
+Click Add network interface
+
+
+
+gcloud compute firewall-rules create fw-ssh-dev --source-ranges=0.0.0.0/0 --target-tags ssh --allow=tcp:22 --network=griffin-dev-vpc
+
+gcloud compute firewall-rules create fw-ssh-prod --source-ranges=0.0.0.0/0 --target-tags ssh --allow=tcp:22 --network=griffin-prod-vpc
+
+
+Task 4: Create and configure Cloud SQL Instance
+
+
+In the Cloud Console, navigate to SQL.
+Click CREATE INSTANCE.
+Click Choose MySQL.
+
+gcloud sql connect griffin-dev-db
+password : 12345678
+
+
+Task 5: Create Kubernetes cluster
+
+In the Cloud Console, navigate to Kubernetes Engine > Clusters.
+Click Create cluster.
+
+
+Network: griffin-dev-vpc
+Node subnet: griffin-dev-wp
+
+
+Task 6: Prepare the Kubernetes cluster
+
+gsutil cp -r gs://cloud-training/gsp321/wp-k8s ~/
+
+cd ~/wp-k8s
+edit wp-env.yaml
+
+Replace username_goes_here and password_goes_here to wp_user and stormwind_rules
+
+connect button
+
+kubectl apply -f wp-env.yaml
+
+
+gcloud iam service-accounts keys create key.json \
+    --iam-account=cloud-sql-proxy@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com
+kubectl create secret generic cloudsql-instance-credentials \
+    --from-file key.json
+
+
+Task 7: Create a WordPress deployment
+cd ~/wp-k8s
+edit wp-deployment.yaml
+
+
+Replace YOUR_SQL_INSTANCE with griffin-dev-db
+
+
+kubectl create -f wp-deployment.yaml
+kubectl create -f wp-service.yaml
+
+
+Task 8: Enable monitoring
+
+ Monitoring. >  CREATE UPTIME CHECK
+
+WordPress Uptime
+
+
+Task 9: Provide access for an additional engineer
+In the Cloud Console, navigate to IAM & Admin > IAM.
+Click +ADD.
+
+Role dropdown, select Project > Editor.
+
+
+
+
+
+
+
+
+
